@@ -11,20 +11,20 @@ data class RutaDto(
     val description: String,
     @SerializedName("is_active") val isActive: Boolean,
     @SerializedName("total_buses") val totalBuses: Int,
-    @SerializedName("created_at") val createdAt: String
+    @SerializedName("created_at") val createdAt: String,
 )
 
 data class RutaRequestDto(
     val name: String,
     val slug: String,
     val description: String,
-    @SerializedName("is_active") val isActive: Boolean
+    @SerializedName("is_active") val isActive: Boolean,
 )
 
 data class RutaStatsDto(
     val total: Int,
     val active: Int,
-    val inactive: Int
+    val inactive: Int,
 )
 
 fun RutaDto.toDomain() = Ruta(
@@ -34,12 +34,12 @@ fun RutaDto.toDomain() = Ruta(
     description = description,
     isActive = isActive,
     totalBuses = totalBuses,
-    createdAt = createdAt
+    createdAt = createdAt,
 )
 
 fun RutaPayload.toRequest() = RutaRequestDto(
     name = name,
     slug = slug,
     description = description,
-    isActive = isActive
+    isActive = isActive,
 )

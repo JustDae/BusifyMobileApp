@@ -17,7 +17,7 @@ class RutaRepositoryImpl @Inject constructor(
     override suspend fun getRutas(): Result<List<Ruta>> = runCatching {
         val response = api.getRutas()
         if (response.isSuccessful) {
-            response.body()!!.map { it.toDomain() }
+            response.body()!!.results.map { it.toDomain() }
         } else {
             error("Error ${response.code()}: ${response.errorBody()?.string()}")
         }

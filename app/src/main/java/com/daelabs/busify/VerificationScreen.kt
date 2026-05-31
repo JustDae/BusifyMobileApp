@@ -2,16 +2,7 @@ package com.daelabs.busify
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,48 +16,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.daelabs.busify.theme.Accent
-import com.daelabs.busify.theme.Background
-import com.daelabs.busify.theme.Border
-import com.daelabs.busify.theme.BorderLight
-import com.daelabs.busify.theme.Error
-import com.daelabs.busify.theme.Info
+import com.daelabs.busify.domain.model.Ruta
 import com.daelabs.busify.theme.BusifyTheme
-import com.daelabs.busify.theme.Success
-import com.daelabs.busify.theme.Surface
-import com.daelabs.busify.theme.TextFaint
-import com.daelabs.busify.theme.TextPrimary
-import com.daelabs.busify.theme.TextSecondary
-import com.daelabs.busify.theme.Warning
 
 @Composable
-fun VerificationScreen() {
+fun VerificationScreen(
+    connectionStatus: String = "Sin conectar",
+    rutas: List<Ruta> = emptyList(),
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(top = 56.dp, start = 24.dp, end = 24.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = "Busify",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
-                color = Accent,
-                modifier = Modifier.padding(bottom = 8.dp),
+                color = MaterialTheme.colorScheme.primary,
             )
 
             Text(
-                text = "Android + Jetpack Compose",
+                text = "Modulo 2 . Conexion con backend",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
-                modifier = Modifier.padding(bottom = 32.dp),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
             )
 
             EnvCard(
@@ -83,94 +64,42 @@ fun VerificationScreen() {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Design System",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-                letterSpacing = 1.sp,
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .align(Alignment.Start),
+                text = connectionStatus,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (connectionStatus.startsWith("EXITO")) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                listOf(
-                    "Accent" to Accent,
-                    "Success" to Success,
-                    "Warning" to Warning,
-                    "Error" to Error,
-                    "Info" to Info,
-                ).forEach { (label, color) ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(color, RoundedCornerShape(8.dp)),
-                        )
-                        Text(
-                            text = label,
-                            fontSize = 9.sp,
-                            color = TextFaint,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Modelos de dominio",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-                letterSpacing = 1.sp,
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .align(Alignment.Start),
-            )
-
-            listOf("Auth.kt", "Bus.kt", "Chofer.kt", "Parada.kt", "Ruta.kt", "User.kt", "Viaje.kt").forEach { file ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = "domain/model/$file",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Accent,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = "✓",
-                        color = Success,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+            rutas.take(3).forEach { ruta ->
+                Text(
+                    text = ". ${ruta.name} (${ruta.totalBuses} unidades activas)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun EnvCard(items: List<Pair<String, String>>) {
+fun EnvCard(items: List<Pair<String, String>>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Surface, RoundedCornerShape(16.dp))
-            .border(1.dp, Border, RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
         Text(
             text = "Estado del entorno",
             style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             letterSpacing = 1.sp,
             modifier = Modifier.padding(bottom = 12.dp),
         )
@@ -185,19 +114,19 @@ private fun EnvCard(items: List<Pair<String, String>>) {
                 Text(
                     text = item.first,
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 )
                 Text(
                     text = item.second,
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                 )
             }
 
             if (index < items.lastIndex) {
-                HorizontalDivider(color = BorderLight, thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f), thickness = 0.5.dp)
             }
         }
     }

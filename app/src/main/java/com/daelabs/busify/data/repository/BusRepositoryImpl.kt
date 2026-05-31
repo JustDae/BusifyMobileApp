@@ -28,9 +28,10 @@ class BusRepositoryImpl @Inject constructor(
         val response = api.getBuses(params)
         if (response.isSuccessful) {
             val body = response.body()!!
-            Pair(body.map { it.toDomain() }, body.size)
+            // Se extraen los datos desde la propiedad .results de PaginatedDto
+            Pair(body.results.map { it.toDomain() }, body.count)
         } else {
-            error("Error ${response.code()}")
+            error("Error ${response.code()}: ${response.errorBody()?.string()}")
         }
     }
 

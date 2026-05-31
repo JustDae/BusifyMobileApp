@@ -1,43 +1,28 @@
 package com.daelabs.busify.data.remote.api
 
-import com.daelabs.busify.data.remote.dto.RutaDto
-import com.daelabs.busify.data.remote.dto.RutaRequestDto
-import com.daelabs.busify.data.remote.dto.RutaStatsDto
+import com.daelabs.busify.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.*
 
 interface RutaApi {
+    @GET("rutas/")
+    suspend fun getRutas(): Response<PaginatedDto<RutaDto>>
 
-    @GET("api/v1/rutas")
-    suspend fun getRutas(
-        @Query("search") search: String? = null,
-        @Query("is_active") isActive: Boolean? = null,
-        @Query("ordering") ordering: String? = null,
-        @Query("page") page: Int = 1,
-        @Query("page_size") pageSize: Int = 12
-    ): Response<List<RutaDto>>
+    @GET("rutas/{id}/")
+    suspend fun getRutaById(@Path("id") id: Int): Response<RutaDto>
 
-    @GET("api/v1/rutas/{id}")
-    suspend fun getRutaById(
-        @Path("id") id: Int
-    ): Response<RutaDto>
+    @POST("rutas/")
+    suspend fun createRuta(@Body body: RutaRequestDto): Response<RutaDto>
 
-    @POST("api/v1/rutas")
-    suspend fun createRuta(
-        @Body payload: RutaRequestDto
-    ): Response<RutaDto>
-
-    @PUT("api/v1/rutas/{id}")
+    @PATCH("rutas/{id}/")
     suspend fun updateRuta(
         @Path("id") id: Int,
-        @Body payload: RutaRequestDto
+        @Body body: RutaRequestDto,
     ): Response<RutaDto>
 
-    @DELETE("api/v1/rutas/{id}")
-    suspend fun deleteRuta(
-        @Path("id") id: Int
-    ): Response<Unit>
+    @DELETE("rutas/{id}/")
+    suspend fun deleteRuta(@Path("id") id: Int): Response<Unit>
 
-    @GET("api/v1/rutas/stats")
-    suspend fun getRutaStats(): Response<RutaStatsDto>
+    @GET("rutas/stats/")
+    suspend fun getStats(): Response<RutaStatsDto>
 }
