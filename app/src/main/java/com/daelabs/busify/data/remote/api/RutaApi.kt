@@ -6,22 +6,22 @@ import retrofit2.http.*
 
 interface RutaApi {
     @GET("rutas/")
-    suspend fun getRutas(): Response<PaginatedDto<RutaDto>>
+    suspend fun getRutas(@QueryMap options: Map<String, String>): Response<RutaResponseDto>
 
     @GET("rutas/{id}/")
-    suspend fun getRutaById(@Path("id") id: Int): Response<RutaDto>
+    suspend fun getRuta(@Path("id") id: Int): Response<RutaDto>
 
     @POST("rutas/")
-    suspend fun createRuta(@Body body: RutaRequestDto): Response<RutaDto>
+    suspend fun createRuta(@Body request: RutaRequestDto): Response<RutaDto>
 
-    @PATCH("rutas/{id}/")
-    suspend fun updateRuta(
-        @Path("id") id: Int,
-        @Body body: RutaRequestDto,
-    ): Response<RutaDto>
+    @PUT("rutas/{id}/")
+    suspend fun updateRuta(@Path("id") id: Int, @Body request: RutaRequestDto): Response<RutaDto>
 
     @DELETE("rutas/{id}/")
     suspend fun deleteRuta(@Path("id") id: Int): Response<Unit>
+
+    @POST("rutas/{id}/asignar_bus/")
+    suspend fun asignarBus(@Path("id") id: Int, @Body request: AsignarBusRequestDto): Response<AsignarBusResponseDto>
 
     @GET("rutas/stats/")
     suspend fun getStats(): Response<RutaStatsDto>

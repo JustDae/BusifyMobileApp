@@ -74,4 +74,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideViajeApi(retrofit: Retrofit): ViajeApi = retrofit.create(ViajeApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCooperativaApi(retrofit: Retrofit): CooperativaApi = retrofit.create(CooperativaApi::class.java)
 }
