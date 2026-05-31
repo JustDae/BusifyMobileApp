@@ -78,4 +78,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideCooperativaApi(retrofit: Retrofit): CooperativaApi = retrofit.create(CooperativaApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDespachoApi(retrofit: Retrofit): DespachoApi {
+        return retrofit.create(DespachoApi::class.java)
+    }
 }

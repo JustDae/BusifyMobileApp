@@ -23,13 +23,20 @@ import com.daelabs.busify.presentation.ui.auth.LoginScreen
 import com.daelabs.busify.presentation.ui.auth.RegisterScreen
 import com.daelabs.busify.presentation.ui.uipublic.catalog.CatalogScreen
 import com.daelabs.busify.presentation.ui.uipublic.home.HomeScreen
+import com.daelabs.busify.presentation.ui.uipublic.route.RutaDetailScreen
+import com.daelabs.busify.presentation.ui.uipublic.cart.DespachoBottomSheet
+import com.daelabs.busify.presentation.ui.client.orders.OrdersScreen
+import com.daelabs.busify.presentation.ui.client.orders.OrderDetailScreen
+import com.daelabs.busify.presentation.ui.client.profile.ProfileScreen
 import com.daelabs.busify.presentation.viewmodel.AuthViewModel
 import com.daelabs.busify.presentation.viewmodel.MonitoreoViewModel
+import com.daelabs.busify.presentation.viewmodel.DespachoViewModel
 
 @Composable
 fun NavGraph(
     authViewModel: AuthViewModel,
     monitoreoViewModel: MonitoreoViewModel = hiltViewModel(),
+    despachoViewModel: DespachoViewModel = hiltViewModel(),
 ) {
     val isCheckingSession by authViewModel.isCheckingSession.collectAsState()
 
@@ -41,6 +48,7 @@ fun NavGraph(
     NavGraphContent(
         authViewModel = authViewModel,
         monitoreoViewModel = monitoreoViewModel,
+        despachoViewModel = despachoViewModel,
     )
 }
 
@@ -48,11 +56,15 @@ fun NavGraph(
 private fun NavGraphContent(
     authViewModel: AuthViewModel,
     monitoreoViewModel: MonitoreoViewModel,
+    despachoViewModel: DespachoViewModel,
 ) {
     val navController = rememberNavController()
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val isStaff by authViewModel.isStaff.collectAsState()
     val busesCount by monitoreoViewModel.totalBusesMonitoreados.collectAsState()
+
+    var mostrarConsolaDespacho by remember { mutableStateOf(false) }
+    var trackingViajeId by remember { mutableStateOf<Int?>(null) }
 
     val startDestination = remember {
         when {
@@ -87,11 +99,28 @@ private fun NavGraphContent(
                 BottomNavBar(
                     navController = navController,
                     busesCount = busesCount,
-                    onMonitoreoClick = { navController.navigate(Screen.Cart.route) },
+                    onMonitoreoClick = { mostrarConsolaDespacho = true },
                 )
             }
         },
     ) { innerPadding ->
+
+        if (mostrarConsolaDespacho) {
+            DespachoBottomSheet(
+                viewModel = despachoViewModel,
+                isOperadorAutenticado = isAuthenticated,
+                onDismiss = { mostrarConsolaDespacho = false },
+                onAuthRequired = {
+                    mostrarConsolaDespacho = false
+                    navController.navigate(Screen.Login.route)
+                },
+                onDespachoConfirmado = { viajeId ->
+                    trackingViajeId = viajeId
+                    mostrarConsolaDespacho = false
+                    navController.navigate("orders/$viajeId")
+                },
+            )
+        }
 
         NavHost(
             navController = navController,
@@ -141,31 +170,41 @@ private fun NavGraphContent(
             composable(
                 route = "ruta/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.IntType }),
-            ) {
-                LoadingScreen("Detalle Técnico de Ruta — Módulo 5")
-            }
-
-            composable(Screen.Cart.route) {
-                ScreenWithLogout(
-                    title = "Consola de Monitoreo de Unidades — Módulo 5",
-                    onLogout = { authViewModel.logout() },
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("id") ?: return@composable
+                RutaDetailScreen(
+                    rutaId = id,
+                    onBack = { navController.popBackStack() },
+                    despachoViewModel = despachoViewModel,
                 )
             }
 
             composable(Screen.Orders.route) {
-                ScreenWithLogout(
-                    title = "Historial de Despachos y Frecuencias — Módulo 6",
-                    onLogout = { authViewModel.logout() },
+                OrdersScreen(
+                    onViajeClick = { id -> navController.navigate("orders/$id") }
+                )
+            }
+
+            composable(
+                route = "orders/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("id") ?: return@composable
+                OrderDetailScreen(
+                    viajeId = id,
+                    onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Screen.Profile.route) {
-                ScreenWithLogout(
-                    title = "Perfil del Operador / Conductor — Módulo 6",
-                    onLogout = { authViewModel.logout() },
-                ) {
-                    LoadingScreen("Verificando credenciales de conducción...")
-                }
+                ProfileScreen(
+                    authViewModel = authViewModel,
+                    onLogout = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
 
             composable(Screen.AdminDashboard.route) {

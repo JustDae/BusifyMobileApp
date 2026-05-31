@@ -20,4 +20,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindRutaRepository(impl: RutaRepositoryImpl): RutaRepository
+
+    @Binds @Singleton
+    abstract fun bindDespachoRepository(impl: DespachoRepositoryImpl): DespachoRepository
 }

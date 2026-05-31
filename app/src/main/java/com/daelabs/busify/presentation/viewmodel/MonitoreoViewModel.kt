@@ -3,9 +3,18 @@ package com.daelabs.busify.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daelabs.busify.domain.model.Ruta
+import com.daelabs.busify.domain.model.Viaje
+import com.daelabs.busify.domain.repository.DespachoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface ViajeDetailUiState {
+    data object Loading : ViajeDetailUiState
+    data class Success(val viaje: Viaje) : ViajeDetailUiState
+    data class Error(val message: String) : ViajeDetailUiState
+}
 
 data class MonitoreoItem(
     val ruta: Ruta,
@@ -13,10 +22,15 @@ data class MonitoreoItem(
 )
 
 @HiltViewModel
-class MonitoreoViewModel @Inject constructor() : ViewModel() {
+class MonitoreoViewModel @Inject constructor(
+    private val repository: DespachoRepository,
+) : ViewModel() {
 
     private val _items = MutableStateFlow<List<MonitoreoItem>>(emptyList())
     val items: StateFlow<List<MonitoreoItem>> = _items.asStateFlow()
+
+    private val _detailState = MutableStateFlow<ViajeDetailUiState>(ViajeDetailUiState.Loading)
+    val detailState: StateFlow<ViajeDetailUiState> = _detailState.asStateFlow()
 
     val totalBusesMonitoreados: StateFlow<Int> = _items
         .map { list -> list.sumOf { it.busesAsignados } }
@@ -26,13 +40,31 @@ class MonitoreoViewModel @Inject constructor() : ViewModel() {
         .map { list -> list.size }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    fun loadViajeDetail(id: Int) {
+        viewModelScope.launch {
+            _detailState.value = ViajeDetailUiState.Loading
+            repository.getViajesActivos()
+                .onSuccess { (viajes, _) ->
+                    val viajeEncontrado = viajes.find { it.id == id }
+                    if (viajeEncontrado != null) {
+                        _detailState.value = ViajeDetailUiState.Success(viajeEncontrado)
+                    } else {
+                        _detailState.value = ViajeDetailUiState.Error("Unidad fuera de cobertura satelital")
+                    }
+                }
+                .onFailure { error ->
+                    _detailState.value = ViajeDetailUiState.Error(error.message ?: "Fallo de conexión remota")
+                }
+        }
+    }
+
     fun monitorearRuta(ruta: Ruta, buses: Int = 1) {
         _items.update { list ->
             val existing = list.find { it.ruta.id == ruta.id }
             if (existing != null) {
                 list.map {
                     if (it.ruta.id == ruta.id)
-                        it.copy(busesAsignados = minOf(it.busesAsignados + buses, ruta.maxCapacidadBuses))
+                        it.copy(busesAsignados = it.busesAsignados + buses)
                     else it
                 }
             } else {
