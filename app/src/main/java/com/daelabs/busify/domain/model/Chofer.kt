@@ -2,18 +2,20 @@ package com.daelabs.busify.domain.model
 
 data class Chofer(
     val id: Int,
-    val nombreCompleto: String,
-    val licenciaConducir: String,
-    val telefono: String,
-    val estaDisponible: Boolean,
-    val busAsignadoId: Int?,
-    val busAsignadoNumero: Int?,
+    val firstName: String,
+    val lastName: String,
+    val fullName: String,
+    val licenseNumber: String,
+    val dailyRate: Double,
+    val tripsCompleted: Int,
+    val isActive: Boolean,
     val createdAt: String,
 )
 
 data class ChoferPayload(
-    val nombreCompleto: String,
-    val licenciaConducir: String,
-    val telefono: String,
-    val estaDisponible: Boolean,
+    val firstName: String,
+    val lastName: String,
+    val licenseNumber: String,
+    val dailyRate: Double,
+    val isActive: Boolean,
 )

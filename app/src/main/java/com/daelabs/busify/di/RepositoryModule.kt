@@ -23,4 +23,16 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindDespachoRepository(impl: DespachoRepositoryImpl): DespachoRepository
+
+    @Binds @Singleton
+    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
+
+    @Binds @Singleton
+    abstract fun bindViajeRepository(impl: ViajeRepositoryImpl): ViajeRepository
+
+    @Binds @Singleton
+    abstract fun bindBusRepository(impl: BusRepositoryImpl): BusRepository
+
+    @Binds @Singleton
+    abstract fun bindChoferRepository(impl: ChoferRepositoryImpl): ChoferRepository
 }

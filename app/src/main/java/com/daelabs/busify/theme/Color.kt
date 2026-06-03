@@ -2,20 +2,20 @@ package com.daelabs.busify.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Background = Color(0xFF0A0A0F)
-val Surface = Color(0xFF111118)
-val Surface2 = Color(0xFF1A1A24)
-val Border = Color(0xFF2A2A38)
-val BorderLight = Color(0xFF1E1E2A)
+val Background = Color(0xFFFFFFFF)
+val Surface = Color(0xFFF8F9FA)
+val Surface2 = Color(0xFFF1F3F5)
+val Border = Color(0xFFDEE2E6)
+val BorderLight = Color(0xFFE9ECEF)
 
-val TextPrimary = Color(0xFFF0F0F8)
-val TextSecondary = Color(0xFF8888AA)
-val TextFaint = Color(0xFF44445A)
+val TextPrimary = Color(0xFF1A1A1A)
+val TextSecondary = Color(0xFF6C757D)
+val TextFaint = Color(0xFFADB5BD)
 
-val Accent = Color(0xFFD4A843)
-val AccentLight = Color(0xFFF0C96E)
-val AccentDark = Color(0xFFA07820)
-val AccentOnDark = Color(0xFF0A0A0F)
+val Accent = Color(0xFF22C55E)
+val AccentLight = Color(0xFF4ADE80)
+val AccentDark = Color(0xFF166534)
+val AccentOnDark = Color(0xFFFFFFFF)
 
 val Success = Color(0xFF22C55E)
 val Warning = Color(0xFFF59E0B)

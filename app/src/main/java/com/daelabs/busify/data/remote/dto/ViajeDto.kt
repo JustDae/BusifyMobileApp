@@ -22,13 +22,18 @@ data class ViajePasajeroDto(
 
 data class ViajeDto(
     val id: Int,
-    val bus: BusInViajeDto,
+    val bus: BusInViajeDto?,
     val status: String,
-    @SerializedName("tarifa_total_recaudada") val tarifaTotalRecaudada: Double,
-    @SerializedName("num_pasajeros_total") val numPasajerosTotal: Int,
-    val pasajeros: List<ViajePasajeroDto>,
-    @SerializedName("created_at") val createdAt: String,
-    @SerializedName("updated_at") val updatedAt: String
+    @SerializedName("tarifa_total_recaudada") val tarifaTotalRecaudada: Double?,
+    @SerializedName("num_pasajeros_total") val numPasajerosTotal: Int?,
+    val pasajeros: List<ViajePasajeroDto>?,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?
+)
+
+data class CreateViajeRequestDto(
+    @SerializedName("bus_id") val busId: Int,
+    @SerializedName("ruta_id") val rutaId: Int,
 )
 
 data class AddRegistroRequestDto(
@@ -59,11 +64,11 @@ fun ViajePasajeroDto.toDomain() = ViajePasajero(
 
 fun ViajeDto.toDomain() = Viaje(
     id = id,
-    busPlaca = bus.placa,
+    busPlaca = bus?.placa ?: "Sin Placa",
     status = ViajeStatus.fromValue(status),
-    tarifaTotalRecaudada = tarifaTotalRecaudada,
-    numPasajerosTotal = numPasajerosTotal,
-    pasajeros = pasajeros.map { it.toDomain() },
-    createdAt = createdAt,
-    updatedAt = updatedAt
+    tarifaTotalRecaudada = tarifaTotalRecaudada ?: 0.0,
+    numPasajerosTotal = numPasajerosTotal ?: 0,
+    pasajeros = pasajeros?.map { it.toDomain() } ?: emptyList(),
+    createdAt = createdAt ?: "",
+    updatedAt = updatedAt ?: ""
 )

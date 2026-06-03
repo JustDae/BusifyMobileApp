@@ -10,4 +10,5 @@ interface BusRepository {
     suspend fun createBus(payload: BusPayload): Result<Bus>
     suspend fun updateBus(id: Int, payload: BusPayload): Result<Bus>
     suspend fun deleteBus(id: Int): Result<Unit>
+    suspend fun getStats(): Result<Map<String, Any>>
 }

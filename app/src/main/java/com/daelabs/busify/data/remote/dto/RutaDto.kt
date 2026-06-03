@@ -19,13 +19,13 @@ data class RutaResponseDto(
 
 data class RutaDto(
     @SerializedName("id") val id: Int,
-    @SerializedName("name") val name: String,
-    @SerializedName("tarifa") val tarifa: Double,
-    @SerializedName("total_buses") val totalBuses: Int,
+    @SerializedName("name") val name: String?,
+    @SerializedName("tarifa") val tarifa: Double?,
+    @SerializedName("total_buses") val totalBuses: Int?,
     @SerializedName("cooperativa_name") val cooperativaName: String?,
     @SerializedName("mapa_snippet_url") val mapaSnippetUrl: String?,
-    @SerializedName("has_buses_activos") val hasBusesActivos: Boolean,
-    @SerializedName("max_capacidad_buses") val maxCapacidadBuses: Int
+    @SerializedName("has_buses_activos") val hasBusesActivos: Boolean?,
+    @SerializedName("max_capacidad_buses") val maxCapacidadBuses: Int?
 )
 
 data class RutaStatsDto(
@@ -44,13 +44,13 @@ data class RutaRequestDto(
 
 fun RutaDto.toDomain() = Ruta(
     id = id,
-    name = name,
-    tarifa = tarifa,
-    totalBuses = totalBuses,
+    name = name ?: "Sin Nombre",
+    tarifa = tarifa ?: 0.0,
+    totalBuses = totalBuses ?: 0,
     cooperativaName = cooperativaName,
     mapaSnippetUrl = mapaSnippetUrl,
-    hasBusesActivos = hasBusesActivos,
-    maxCapacidadBuses = maxCapacidadBuses
+    hasBusesActivos = hasBusesActivos ?: false,
+    maxCapacidadBuses = maxCapacidadBuses ?: 0
 )
 
 fun RutaPayload.toRequest() = RutaRequestDto(

@@ -1,8 +1,6 @@
 package com.daelabs.busify.data.remote.api
 
-import com.daelabs.busify.data.remote.dto.BusDto
-import com.daelabs.busify.data.remote.dto.BusRequestDto
-import com.daelabs.busify.data.remote.dto.PaginatedDto
+import com.daelabs.busify.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -27,4 +25,7 @@ interface BusApi {
 
     @DELETE("buses/{id}/")
     suspend fun deleteBus(@Path("id") id: Int): Response<Unit>
+
+    @GET("buses/stats/")
+    suspend fun getStats(): Response<BusStatsDto>
 }

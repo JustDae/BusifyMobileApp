@@ -1,6 +1,7 @@
 package com.daelabs.busify.presentation.navigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,17 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.daelabs.busify.presentation.components.LoadingScreen
+import com.daelabs.busify.presentation.ui.admin.AdminScaffold
+import com.daelabs.busify.presentation.ui.admin.dashboard.DashboardScreen
+import com.daelabs.busify.presentation.ui.admin.rutas.AdminRutaFormScreen
+import com.daelabs.busify.presentation.ui.admin.rutas.AdminRutaListScreen
+import com.daelabs.busify.presentation.ui.admin.buses.AdminBusFormScreen
+import com.daelabs.busify.presentation.ui.admin.buses.AdminBusListScreen
+import com.daelabs.busify.presentation.ui.admin.choferes.AdminChoferFormScreen
+import com.daelabs.busify.presentation.ui.admin.choferes.AdminChoferListScreen
+import com.daelabs.busify.presentation.ui.admin.viajes.AdminViajeListScreen
+import com.daelabs.busify.presentation.ui.admin.usuarios.AdminUsuarioFormScreen
+import com.daelabs.busify.presentation.ui.admin.usuarios.AdminUsuarioListScreen
 import com.daelabs.busify.presentation.ui.auth.LoginScreen
 import com.daelabs.busify.presentation.ui.auth.RegisterScreen
 import com.daelabs.busify.presentation.ui.uipublic.catalog.CatalogScreen
@@ -208,9 +220,221 @@ private fun NavGraphContent(
             }
 
             composable(Screen.AdminDashboard.route) {
-                ScreenWithLogout(
-                    title = "Consola Administrativa de Operaciones Globales — Módulo 8",
-                    onLogout = { authViewModel.logout() },
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminDashboard.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Dashboard",
+                    onNavClick   = { route -> navController.navigate(route) {
+                        launchSingleTop = true
+                        restoreState    = true
+                    }},
+                    onStoreClick = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.AdminDashboard.route) { inclusive = false }
+                        }
+                    },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        DashboardScreen(onNavigate = { route -> navController.navigate(route) })
+                    }
+                }
+            }
+
+            composable(Screen.AdminRutas.route) {
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminRutas.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Rutas",
+                    onNavClick   = { r -> navController.navigate(r) { launchSingleTop = true } },
+                    onStoreClick = { navController.navigate(Screen.Home.route) },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        AdminRutaListScreen(
+                            onEditRuta = { id -> 
+                                navController.navigate(Screen.AdminRutaEdit.createRoute(id)) 
+                            }
+                        )
+                    }
+                }
+            }
+
+            composable(
+                route = Screen.AdminRutaEdit.route,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                val id = backStackEntry.arguments?.getInt("id")
+                val actualId = if (id == -1) null else id
+                AdminRutaFormScreen(
+                    rutaId = actualId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.AdminBuses.route) {
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminBuses.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Buses",
+                    onNavClick   = { r -> navController.navigate(r) { launchSingleTop = true } },
+                    onStoreClick = { navController.navigate(Screen.Home.route) },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        AdminBusListScreen(
+                            onEditBus = { id -> 
+                                navController.navigate(Screen.AdminBusEdit.createRoute(id)) 
+                            }
+                        )
+                    }
+                }
+            }
+
+            composable(
+                route = Screen.AdminBusEdit.route,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                val id = backStackEntry.arguments?.getInt("id")
+                val actualId = if (id == -1) null else id
+                AdminBusFormScreen(
+                    busId = actualId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.AdminChoferes.route) {
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminChoferes.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Choferes",
+                    onNavClick   = { r -> navController.navigate(r) { launchSingleTop = true } },
+                    onStoreClick = { navController.navigate(Screen.Home.route) },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        AdminChoferListScreen(
+                            onEditChofer = { id -> 
+                                navController.navigate(Screen.AdminChoferEdit.createRoute(id)) 
+                            }
+                        )
+                    }
+                }
+            }
+
+            composable(
+                route = Screen.AdminChoferEdit.route,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                val id = backStackEntry.arguments?.getInt("id")
+                val actualId = if (id == -1) null else id
+                AdminChoferFormScreen(
+                    choferId = actualId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.AdminViajes.route) {
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminViajes.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Viajes",
+                    onNavClick   = { r -> navController.navigate(r) { launchSingleTop = true } },
+                    onStoreClick = { navController.navigate(Screen.Home.route) },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        AdminViajeListScreen()
+                    }
+                }
+            }
+
+            composable(Screen.AdminUsuarios.route) {
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                AdminScaffold(
+                    currentRoute = Screen.AdminUsuarios.route,
+                    user         = authViewModel.currentUser.collectAsState().value,
+                    title        = "Usuarios",
+                    onNavClick   = { r -> navController.navigate(r) { launchSingleTop = true } },
+                    onStoreClick = { navController.navigate(Screen.Home.route) },
+                    onLogout     = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        AdminUsuarioListScreen(
+                            onEditUser = { id -> 
+                                navController.navigate(Screen.AdminUsuarioEdit.createRoute(id)) 
+                            }
+                        )
+                    }
+                }
+            }
+
+            composable(
+                route = Screen.AdminUsuarioEdit.route,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                val id = backStackEntry.arguments?.getInt("id")
+                val actualId = if (id == -1) null else id
+                AdminUsuarioFormScreen(
+                    userId = actualId,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

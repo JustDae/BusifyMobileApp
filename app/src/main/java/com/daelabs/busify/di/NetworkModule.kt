@@ -84,4 +84,8 @@ object NetworkModule {
     fun provideDespachoApi(retrofit: Retrofit): DespachoApi {
         return retrofit.create(DespachoApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideChoferApi(retrofit: Retrofit): ChoferApi = retrofit.create(ChoferApi::class.java)
 }

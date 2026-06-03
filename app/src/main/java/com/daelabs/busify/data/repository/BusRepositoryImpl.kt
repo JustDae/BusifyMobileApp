@@ -57,4 +57,17 @@ class BusRepositoryImpl @Inject constructor(
         val response = api.deleteBus(id)
         if (!response.isSuccessful) error("Error ${response.code()}")
     }
+
+    override suspend fun getStats(): Result<Map<String, Any>> = runCatching {
+        val response = api.getStats()
+        if (response.isSuccessful) {
+            val s = response.body()!!
+            mapOf(
+                "total_active" to s.totalActive,
+                "total_inactive" to s.totalInactive,
+                "avg_speed" to (s.avgSpeed ?: 0.0),
+                "total_capacity" to (s.totalCapacity ?: 0)
+            )
+        } else error("Error ${response.code()}")
+    }
 }

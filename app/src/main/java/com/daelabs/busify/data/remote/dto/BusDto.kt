@@ -11,21 +11,21 @@ data class RutaSummaryDto(
 
 data class BusDto(
     val id: Int,
-    @SerializedName("numero_bus") val numeroBus: Int,
-    val placa: String,
-    @SerializedName("ruta_actual") val rutaActual: String,
-    @SerializedName("capacidad_pasajeros") val capacidadPasajeros: Int,
-    @SerializedName("pasajeros_actuales") val pasajerosActuales: Int,
-    @SerializedName("velocidad_kmh") val velocidadKmh: String,
-    @SerializedName("en_ruta") val enRuta: Boolean,
-    @SerializedName("esta_activo") val estaActivo: Boolean,
+    @SerializedName("numero_bus") val numeroBus: Int?,
+    val placa: String?,
+    @SerializedName("ruta_actual") val rutaActual: String?,
+    @SerializedName("capacidad_pasajeros") val capacidadPasajeros: Int?,
+    @SerializedName("pasajeros_actuales") val pasajerosActuales: Int?,
+    @SerializedName("velocidad_kmh") val velocidadKmh: String?,
+    @SerializedName("en_ruta") val enRuta: Boolean?,
+    @SerializedName("esta_activo") val estaActivo: Boolean?,
     @SerializedName("chofer_id") val choferId: Int?,
     @SerializedName("chofer_nombre") val choferNombre: String?,
     @SerializedName("ultima_ubicacion_lat") val ultimaUbicacionLat: Double?,
     @SerializedName("ultima_ubicacion_lng") val ultimaUbicacionLng: Double?,
     val ruta: RutaSummaryDto?,
-    @SerializedName("created_at") val createdAt: String,
-    @SerializedName("updated_at") val updatedAt: String,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
 )
 
 data class BusRequestDto(
@@ -46,20 +46,20 @@ data class BusStatsDto(
 
 fun BusDto.toDomain() = Bus(
     id = id,
-    numeroBus = numeroBus,
-    placa = placa,
-    rutaActual = rutaActual,
-    capacidadPasajeros = capacidadPasajeros,
-    pasajerosActuales = pasajerosActuales,
-    velocidadKmh = velocidadKmh.toDoubleOrNull()?.toInt() ?: 0,
-    estaActivo = estaActivo,
-    enRuta = enRuta,
+    numeroBus = numeroBus ?: 0,
+    placa = placa ?: "Sin Placa",
+    rutaActual = rutaActual ?: "Sin Ruta",
+    capacidadPasajeros = capacidadPasajeros ?: 0,
+    pasajerosActuales = pasajerosActuales ?: 0,
+    velocidadKmh = velocidadKmh?.toDoubleOrNull()?.toInt() ?: 0,
+    estaActivo = estaActivo ?: false,
+    enRuta = enRuta ?: false,
     choferId = choferId,
     choferNombre = choferNombre,
     ultimaUbicacionLat = ultimaUbicacionLat,
     ultimaUbicacionLng = ultimaUbicacionLng,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
+    createdAt = createdAt ?: "",
+    updatedAt = updatedAt ?: "",
 )
 
 fun BusPayload.toRequest() = BusRequestDto(

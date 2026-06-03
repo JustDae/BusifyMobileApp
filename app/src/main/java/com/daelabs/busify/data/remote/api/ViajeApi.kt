@@ -15,7 +15,9 @@ interface ViajeApi {
     suspend fun getViaje(@Path("id") id: Int): Response<ViajeDto>
 
     @POST("viajes/")
-    suspend fun createViaje(): Response<ViajeDto>
+    suspend fun createViaje(
+        @Body body: CreateViajeRequestDto
+    ): Response<ViajeDto>
 
     @POST("viajes/{id}/add-registro/")
     suspend fun addRegistro(
