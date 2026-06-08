@@ -112,6 +112,7 @@ private fun NavGraphContent(
                 BottomNavBar(
                     navController = navController,
                     busesCount = busesCount,
+                    isStaff = isStaff,
                     onMonitoreoClick = { mostrarConsolaDespacho = true },
                 )
             }

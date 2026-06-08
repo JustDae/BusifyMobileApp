@@ -24,11 +24,17 @@ data class BottomNavItem(
 fun BottomNavBar(
     navController: NavController,
     busesCount: Int,
+    isStaff: Boolean = false,
     onMonitoreoClick: () -> Unit,
 ) {
     val items = listOf(
         BottomNavItem(Screen.Home, "Inicio", Icons.Outlined.Home, Icons.Filled.Home),
-        BottomNavItem(Screen.Catalog, "Rutas", Icons.Outlined.DirectionsBus, Icons.Filled.DirectionsBus),
+        BottomNavItem(
+            if (isStaff) Screen.AdminRutas else Screen.Catalog,
+            "Rutas",
+            Icons.Outlined.DirectionsBus,
+            Icons.Filled.DirectionsBus
+        ),
         BottomNavItem(Screen.Cart, "Monitoreo", Icons.Outlined.Analytics, Icons.Filled.Analytics, busesCount),
         BottomNavItem(Screen.Orders, "Historial", Icons.Outlined.History, Icons.Filled.History),
         BottomNavItem(Screen.Profile, "Perfil", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle),
