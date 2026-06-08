@@ -34,8 +34,8 @@ fun AdminUsuarioFormScreen(
     var isActive by remember { mutableStateOf(true) }
     var password by remember { mutableStateOf("") }
 
-    LaunchedEffect(userId) {
-        if (userId != null) {
+    LaunchedEffect(userId, state.users) {
+        if (userId != null && state.users.isNotEmpty()) {
             val user = state.users.find { it.id == userId }
             user?.let {
                 username = it.username

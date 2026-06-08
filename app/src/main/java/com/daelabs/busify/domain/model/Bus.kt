@@ -2,8 +2,9 @@ package com.daelabs.busify.domain.model
 
 data class Bus(
     val id: Int,
-    val numeroBus: Int,
+    val numeroBus: String,
     val placa: String,
+    val rutaId: Int?,
     val rutaActual: String,
     val capacidadPasajeros: Int,
     val pasajerosActuales: Int,
@@ -19,9 +20,10 @@ data class Bus(
 )
 
 data class BusPayload(
-    val numeroBus: Int,
+    val numeroBus: String,
     val placa: String,
-    val rutaActual: String,
+    val modelo: String,
+    val rutaId: Int?,
     val capacidadPasajeros: Int,
     val estaActivo: Boolean,
     val choferId: Int,

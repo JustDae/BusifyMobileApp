@@ -20,7 +20,7 @@ interface RutaApi {
     @DELETE("rutas/{id}/")
     suspend fun deleteRuta(@Path("id") id: Int): Response<Unit>
 
-    @POST("rutas/{id}/asignar_bus/")
+    @POST("rutas/{id}/asignar-bus/")
     suspend fun asignarBus(@Path("id") id: Int, @Body request: AsignarBusRequestDto): Response<AsignarBusResponseDto>
 
     @GET("rutas/stats/")

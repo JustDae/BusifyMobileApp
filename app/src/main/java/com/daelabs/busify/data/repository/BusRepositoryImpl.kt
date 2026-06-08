@@ -19,8 +19,10 @@ class BusRepositoryImpl @Inject constructor(
         val params = buildMap<String, String> {
             filters.search?.let { put("search", it) }
             filters.ruta?.let { put("ruta", it) }
-            filters.estaActivo?.let { put("esta_activo", it.toString()) }
-            filters.enRuta?.let { put("en_ruta", it.toString()) }
+            filters.estaActivo?.let { 
+                put("status", if (it) "active" else "inactive") 
+            }
+            filters.enRuta?.let { put("is_on_route", it.toString()) }
             filters.ordering?.let { put("ordering", it) }
             put("page", filters.page.toString())
             put("page_size", filters.pageSize.toString())
@@ -28,7 +30,6 @@ class BusRepositoryImpl @Inject constructor(
         val response = api.getBuses(params)
         if (response.isSuccessful) {
             val body = response.body()!!
-            // Se extraen los datos desde la propiedad .results de PaginatedDto
             Pair(body.results.map { it.toDomain() }, body.count)
         } else {
             error("Error ${response.code()}: ${response.errorBody()?.string()}")
@@ -63,8 +64,8 @@ class BusRepositoryImpl @Inject constructor(
         if (response.isSuccessful) {
             val s = response.body()!!
             mapOf(
-                "total_active" to s.totalActive,
-                "total_inactive" to s.totalInactive,
+                "total_active" to (s.totalActive ?: 0),
+                "total_inactive" to (s.totalInactive ?: 0),
                 "avg_speed" to (s.avgSpeed ?: 0.0),
                 "total_capacity" to (s.totalCapacity ?: 0)
             )

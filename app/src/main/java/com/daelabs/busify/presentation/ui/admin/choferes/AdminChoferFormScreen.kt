@@ -35,8 +35,8 @@ fun AdminChoferFormScreen(
     var dailyRate by remember { mutableStateOf("") }
     var isActive by remember { mutableStateOf(true) }
 
-    LaunchedEffect(choferId) {
-        if (choferId != null) {
+    LaunchedEffect(choferId, state.choferes) {
+        if (choferId != null && state.choferes.isNotEmpty()) {
             val chofer = state.choferes.find { it.id == choferId }
             chofer?.let {
                 firstName = it.firstName

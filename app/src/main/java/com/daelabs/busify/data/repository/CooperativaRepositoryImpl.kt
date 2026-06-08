@@ -13,7 +13,7 @@ class CooperativaRepositoryImpl @Inject constructor(
 
     override suspend fun getCooperativas(): Result<List<Cooperativa>> = runCatching {
         val response = api.getCooperativas()
-        if (response.isSuccessful) response.body()!!
+        if (response.isSuccessful) response.body()!!.results
         else error("Error ${response.code()}")
     }
 }

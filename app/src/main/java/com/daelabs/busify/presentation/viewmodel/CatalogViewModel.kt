@@ -37,7 +37,10 @@ class CatalogViewModel @Inject constructor(
 
     private var searchJob: Job? = null
 
-    init { loadCooperativas(); load() }
+    init { 
+        loadCooperativas()
+        load(reset = true) 
+    }
 
     private fun loadCooperativas() {
         viewModelScope.launch {
@@ -48,36 +51,49 @@ class CatalogViewModel @Inject constructor(
     }
 
     fun load(reset: Boolean = true) {
-        val current = _state.value
-        val page = if (reset) 1 else current.page
-
         if (reset) {
-            _state.update { it.copy(isLoading = true, error = null, page = 1) }
+            _state.update { it.copy(isLoading = true, error = null, page = 1, rutas = emptyList()) }
         } else {
-            if (current.isLoadingMore || !current.hasMore) return
+            if (_state.value.isLoadingMore || !_state.value.hasMore) return
             _state.update { it.copy(isLoadingMore = true) }
         }
 
+        val snapshot = _state.value
+
         viewModelScope.launch {
             val filters = RutaFilters(
-                search = current.search.ifBlank { null },
-                cooperativa = current.selectedCooperativa,
-                ordering = current.ordering.ifBlank { null },
-                isActive = true,
-                page = page,
-                pageSize = 12,
+                search = snapshot.search.ifBlank { null },
+                cooperativa = snapshot.selectedCooperativa,
+                ordering = snapshot.ordering.ifBlank { null },
+                isActive = null,
+                page = snapshot.page,
+                pageSize = if (snapshot.selectedCooperativa != null || snapshot.search.isNotBlank()) 50 else 12,
             )
+            
             rutaRepository.getRutas(filters)
-                .onSuccess { (rutas, total) ->
-                    _state.update { s ->
-                        s.copy(
-                            rutas = if (reset) rutas else s.rutas + rutas,
-                            total = total,
-                            hasMore = (if (reset) rutas else s.rutas + rutas).size < total,
+                .onSuccess { (rutasRaw, serverTotal) ->
+                    val filtered = rutasRaw.filter { ruta ->
+                        val matchesCoop = snapshot.selectedCooperativa == null || 
+                                         ruta.cooperativaId == snapshot.selectedCooperativa
+                        
+                        val matchesSearch = snapshot.search.isBlank() || 
+                                          ruta.name.contains(snapshot.search, ignoreCase = true) ||
+                                          (ruta.cooperativaName?.contains(snapshot.search, ignoreCase = true) ?: false)
+                        
+                        matchesCoop && matchesSearch
+                    }
+
+                    _state.update { st ->
+                        st.copy(
+                            rutas = if (reset) filtered else st.rutas + filtered,
+                            total = if (snapshot.selectedCooperativa == null && snapshot.search.isBlank()) serverTotal else filtered.size,
+                            hasMore = if (snapshot.selectedCooperativa == null && snapshot.search.isBlank()) 
+                                        (if (reset) filtered else st.rutas + filtered).size < serverTotal 
+                                      else false,
                             isLoading = false,
                             isLoadingMore = false,
-                            page = page + 1,
-                            error = null,
+                            page = snapshot.page + 1,
+                            error = null
                         )
                     }
                 }
@@ -97,7 +113,9 @@ class CatalogViewModel @Inject constructor(
     }
 
     fun setCooperativa(id: Int?) {
-        _state.update { it.copy(selectedCooperativa = id) }
+        val currentId = _state.value.selectedCooperativa
+        val nextId = if (currentId == id) null else id
+        _state.update { it.copy(selectedCooperativa = nextId) }
         load(reset = true)
     }
 

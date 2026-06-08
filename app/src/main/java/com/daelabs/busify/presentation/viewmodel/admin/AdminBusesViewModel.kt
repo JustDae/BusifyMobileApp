@@ -7,7 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.daelabs.busify.domain.model.Bus
 import com.daelabs.busify.domain.model.BusFilters
 import com.daelabs.busify.domain.model.BusPayload
+import com.daelabs.busify.domain.model.Chofer
+import com.daelabs.busify.domain.model.Ruta
+import com.daelabs.busify.domain.model.RutaFilters
 import com.daelabs.busify.domain.repository.BusRepository
+import com.daelabs.busify.domain.repository.ChoferRepository
+import com.daelabs.busify.domain.repository.RutaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,6 +21,8 @@ import javax.inject.Inject
 
 data class AdminBusesState(
     val buses: List<Bus> = emptyList(),
+    val choferes: List<Chofer> = emptyList(),
+    val rutas: List<Ruta> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val filters: BusFilters = BusFilters(),
@@ -26,7 +33,9 @@ data class AdminBusesState(
 
 @HiltViewModel
 class AdminBusesViewModel @Inject constructor(
-    private val repository: BusRepository
+    private val repository: BusRepository,
+    private val choferRepository: ChoferRepository,
+    private val rutaRepository: RutaRepository
 ) : ViewModel() {
 
     private val _state = mutableStateOf(AdminBusesState())
@@ -36,6 +45,28 @@ class AdminBusesViewModel @Inject constructor(
 
     init {
         getBuses()
+        getChoferes()
+        getRutas()
+    }
+
+    fun getRutas() {
+        viewModelScope.launch {
+            rutaRepository.getRutas(RutaFilters(pageSize = 100)).onSuccess { result ->
+                _state.value = _state.value.copy(rutas = result.first)
+            }.onFailure { error ->
+                _state.value = _state.value.copy(error = error.message ?: "Error al cargar rutas")
+            }
+        }
+    }
+
+    fun getChoferes() {
+        viewModelScope.launch {
+            choferRepository.getChoferes().onSuccess { choferes ->
+                _state.value = _state.value.copy(choferes = choferes)
+            }.onFailure { error ->
+                _state.value = _state.value.copy(error = error.message ?: "Error al cargar choferes")
+            }
+        }
     }
 
     fun getBuses() {

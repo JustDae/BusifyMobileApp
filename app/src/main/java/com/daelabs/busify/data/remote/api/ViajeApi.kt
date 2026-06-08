@@ -19,10 +19,25 @@ interface ViajeApi {
         @Body body: CreateViajeRequestDto
     ): Response<ViajeDto>
 
+    @PUT("viajes/{id}/")
+    suspend fun updateViaje(
+        @Path("id") id: Int,
+        @Body body: CreateViajeRequestDto
+    ): Response<ViajeDto>
+
+    @DELETE("viajes/{id}/")
+    suspend fun deleteViaje(@Path("id") id: Int): Response<Unit>
+
     @POST("viajes/{id}/add-registro/")
     suspend fun addRegistro(
         @Path("id") id: Int,
         @Body body: AddRegistroRequestDto,
+    ): Response<ViajeDto>
+
+    @POST("viajes/{id}/comprar-pasaje/")
+    suspend fun comprarPasaje(
+        @Path("id") id: Int,
+        @Query("cantidad") cantidad: Int = 1
     ): Response<ViajeDto>
 
     @POST("viajes/{id}/update-status/")

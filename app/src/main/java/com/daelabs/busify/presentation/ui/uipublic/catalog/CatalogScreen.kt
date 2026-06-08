@@ -1,5 +1,6 @@
 package com.daelabs.busify.presentation.ui.uipublic.catalog
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -8,11 +9,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -76,19 +79,48 @@ fun CatalogScreen(
                         )
                     }
                     
-                    Surface(
-                        onClick = { /* TODO: Open advanced filters */ },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.FilterList,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val rotation = rememberInfiniteTransition(label = "refresh")
+                            .animateFloat(
+                                initialValue = 0f,
+                                targetValue = if (state.isLoading) 360f else 0f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(1000, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Restart
+                                ),
+                                label = "rotation"
                             )
+
+                        IconButton(
+                            onClick = viewModel::refresh,
+                            modifier = Modifier.size(36.dp),
+                            enabled = !state.isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Actualizar",
+                                tint = if (state.isLoading) MaterialTheme.colorScheme.primary 
+                                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .let { if (state.isLoading) it.rotate(rotation.value) else it }
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            onClick = { /* TODO: Open advanced filters */ },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.FilterList,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                         }
                     }
                 }

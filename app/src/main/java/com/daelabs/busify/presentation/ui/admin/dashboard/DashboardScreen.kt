@@ -1,5 +1,6 @@
 package com.daelabs.busify.presentation.ui.admin.dashboard
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +34,7 @@ fun DashboardScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     when (val s = state) {
         is DashboardUiState.Loading ->
@@ -54,6 +57,7 @@ fun DashboardScreen(
             DashboardContent(
                 stats = s.stats,
                 lastUpdated = lastUpdated,
+                isRefreshing = isRefreshing,
                 onNavigate = onNavigate,
                 onRefresh = viewModel::load,
             )
@@ -64,6 +68,7 @@ fun DashboardScreen(
 private fun DashboardContent(
     stats: com.daelabs.busify.presentation.viewmodel.DashboardStats,
     lastUpdated: Long,
+    isRefreshing: Boolean,
     onNavigate: (String) -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -94,8 +99,29 @@ private fun DashboardContent(
                         color = TextFaint,
                     )
                 }
-                IconButton(onClick = onRefresh) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Accent)
+                val rotation = rememberInfiniteTransition(label = "refresh")
+                    .animateFloat(
+                        initialValue = 0f,
+                        targetValue = if (isRefreshing) 360f else 0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "rotation"
+                    )
+
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = !isRefreshing
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Actualizar",
+                        tint = Accent,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .let { if (isRefreshing) it.rotate(rotation.value) else it }
+                    )
                 }
             }
         }
@@ -110,6 +136,7 @@ private fun DashboardContent(
                     icon = Icons.Default.DirectionsBus,
                     color = Accent,
                     hasAlert = stats.inactiveBuses > 0,
+                    isError = stats.sectionErrors.containsKey("buses"),
                     onClick = { onNavigate("admin/buses") },
                     modifier = Modifier.weight(1f),
                 )
@@ -119,6 +146,7 @@ private fun DashboardContent(
                     subtitle = "${stats.totalRutas} total",
                     icon = Icons.Default.AltRoute,
                     color = Info,
+                    isError = stats.sectionErrors.containsKey("rutas"),
                     onClick = { onNavigate("admin/rutas") },
                     modifier = Modifier.weight(1f),
                 )
@@ -132,6 +160,7 @@ private fun DashboardContent(
                     value = stats.totalViajes.toString(),
                     icon = Icons.Default.Map,
                     color = Success,
+                    isError = stats.sectionErrors.containsKey("viajes"),
                     onClick = { onNavigate("admin/viajes") },
                     modifier = Modifier.weight(1f),
                 )
@@ -141,6 +170,7 @@ private fun DashboardContent(
                     subtitle = "${stats.totalUsers} registrados",
                     icon = Icons.Default.People,
                     color = Warning,
+                    isError = stats.sectionErrors.containsKey("usuarios"),
                     onClick = { onNavigate("admin/usuarios") },
                     modifier = Modifier.weight(1f),
                 )
@@ -155,14 +185,16 @@ private fun DashboardContent(
                     subtitle = "${stats.totalChoferes} total",
                     icon = Icons.Default.Person,
                     color = Info,
+                    isError = stats.sectionErrors.containsKey("choferes"),
                     onClick = { onNavigate("admin/choferes") },
                     modifier = Modifier.weight(1f),
                 )
                 KpiCard(
                     title = "Velocidad media",
-                    value = "${"%.1f".format(stats.avgSpeed)} km/h",
+                    value = "${String.format(Locale.US, "%.1f", stats.avgSpeed)} km/h",
                     icon = Icons.Default.Speed,
                     color = Accent,
+                    isError = stats.sectionErrors.containsKey("buses"),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -175,13 +207,14 @@ private fun DashboardContent(
                     value = stats.staffUsers.toString(),
                     icon = Icons.Default.AdminPanelSettings,
                     color = TextSecondary,
+                    isError = stats.sectionErrors.containsKey("usuarios"),
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
 
-        if (stats.viajesByStatus.isNotEmpty()) {
+        if (stats.viajesByStatus.isNotEmpty() || stats.sectionErrors.containsKey("viajes")) {
             item {
                 Surface(
                     color = Surface,
@@ -209,42 +242,54 @@ private fun DashboardContent(
                         }
                         Spacer(Modifier.height(16.dp))
 
-                        val total = stats.totalViajes.coerceAtLeast(1)
-                        stats.viajesByStatus.entries.forEach { (statusValue, count) ->
-                            val status = ViajeStatus.fromValue(statusValue)
-                            val color = viajeStatusColor(status)
-                            val pct = (count.toFloat() / total).coerceIn(0.02f, 1f)
+                        if (stats.sectionErrors.containsKey("viajes")) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    "Error al cargar estados", color = Error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        } else {
+                            val total = stats.totalViajes.coerceAtLeast(1)
+                            stats.viajesByStatus.entries.forEach { (statusValue, count) ->
+                                val status = ViajeStatus.fromValue(statusValue)
+                                val color = viajeStatusColor(status)
+                                val pct = (count.toFloat() / total).coerceIn(0.02f, 1f)
 
-                            Column(modifier = Modifier.padding(bottom = 10.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text = status.label,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary,
-                                    )
-                                    Text(
-                                        text = count.toString(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = color,
-                                    )
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(7.dp)
-                                        .background(Surface2, MaterialTheme.shapes.extraSmall),
-                                ) {
+                                Column(modifier = Modifier.padding(bottom = 10.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Text(
+                                            text = status.label,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextSecondary,
+                                        )
+                                        Text(
+                                            text = count.toString(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = color,
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
                                     Box(
                                         modifier = Modifier
-                                            .fillMaxWidth(pct)
-                                            .fillMaxHeight()
-                                            .background(color, MaterialTheme.shapes.extraSmall),
-                                    )
+                                            .fillMaxWidth()
+                                            .height(7.dp)
+                                            .background(Surface2, MaterialTheme.shapes.extraSmall),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(pct)
+                                                .fillMaxHeight()
+                                                .background(color, MaterialTheme.shapes.extraSmall),
+                                        )
+                                    }
                                 }
                             }
                         }

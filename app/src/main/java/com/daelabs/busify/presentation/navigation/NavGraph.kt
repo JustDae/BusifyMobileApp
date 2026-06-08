@@ -28,6 +28,7 @@ import com.daelabs.busify.presentation.ui.admin.buses.AdminBusFormScreen
 import com.daelabs.busify.presentation.ui.admin.buses.AdminBusListScreen
 import com.daelabs.busify.presentation.ui.admin.choferes.AdminChoferFormScreen
 import com.daelabs.busify.presentation.ui.admin.choferes.AdminChoferListScreen
+import com.daelabs.busify.presentation.ui.admin.viajes.AdminViajeFormScreen
 import com.daelabs.busify.presentation.ui.admin.viajes.AdminViajeListScreen
 import com.daelabs.busify.presentation.ui.admin.usuarios.AdminUsuarioFormScreen
 import com.daelabs.busify.presentation.ui.admin.usuarios.AdminUsuarioListScreen
@@ -391,9 +392,29 @@ private fun NavGraphContent(
                     },
                 ) { padding ->
                     Box(modifier = Modifier.padding(padding)) {
-                        AdminViajeListScreen()
+                        AdminViajeListScreen(
+                            onEditViaje = { id -> 
+                                navController.navigate(Screen.AdminViajeEdit.createRoute(id)) 
+                            }
+                        )
                     }
                 }
+            }
+
+            composable(
+                route = Screen.AdminViajeEdit.route,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { backStackEntry ->
+                if (!isStaff) {
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) { popUpTo(0) } }
+                    return@composable
+                }
+                val id = backStackEntry.arguments?.getInt("id")
+                val actualId = if (id == -1) null else id
+                AdminViajeFormScreen(
+                    viajeId = actualId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             composable(Screen.AdminUsuarios.route) {

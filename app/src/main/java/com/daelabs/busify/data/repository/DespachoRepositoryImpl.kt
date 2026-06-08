@@ -1,6 +1,7 @@
 package com.daelabs.busify.data.repository
 
 import com.daelabs.busify.data.remote.api.DespachoApi
+import com.daelabs.busify.data.remote.dto.AsignarUnidadRequestDto
 import com.daelabs.busify.data.remote.dto.CrearDespachoRequestDto
 import com.daelabs.busify.data.remote.dto.toDomain
 import com.daelabs.busify.domain.model.Viaje
@@ -26,33 +27,19 @@ class DespachoRepositoryImpl @Inject constructor(
     }
 
     override suspend fun asignarUnidad(viajeId: Int, rutaId: Int, busId: Int, choferId: Int): Result<Viaje> = runCatching {
-        Viaje(
-            id = viajeId,
-            status = ViajeStatus.PENDING,
-            busPlaca = "",
-            tarifaTotalRecaudada = 0.0,
-            numPasajerosTotal = 0,
-            pasajeros = emptyList(),
-            createdAt = "",
-            updatedAt = ""
-        )
+        val response = api.asignarUnidad(viajeId, AsignarUnidadRequestDto(rutaId, busId, choferId))
+        if (response.isSuccessful) response.body()!!.toDomain()
+        else error("Error ${response.code()}: ${response.errorBody()?.string()}")
     }
 
     override suspend fun confirmarDespacho(viajeId: Int): Result<Viaje> = runCatching {
-        Viaje(
-            id = viajeId,
-            status = ViajeStatus.PENDING,
-            busPlaca = "",
-            tarifaTotalRecaudada = 0.0,
-            numPasajerosTotal = 0,
-            pasajeros = emptyList(),
-            createdAt = "",
-            updatedAt = ""
-        )
+        val response = api.confirmarDespacho(viajeId)
+        if (response.isSuccessful) response.body()!!.toDomain()
+        else error("Error ${response.code()}: ${response.errorBody()?.string()}")
     }
 
-    override suspend fun getViajesActivos(page: Int?): Result<Pair<List<Viaje>, Int>> = runCatching {
-        val response = api.getViajesActivos(page)
+    override suspend fun getViajesActivos(page: Int?, status: String?): Result<Pair<List<Viaje>, Int>> = runCatching {
+        val response = api.getViajesActivos(page, status)
         if (response.isSuccessful) {
             val body = response.body()!!
             Pair(body.results.map { it.toDomain() }, body.count)

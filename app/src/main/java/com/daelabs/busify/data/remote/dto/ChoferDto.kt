@@ -25,9 +25,9 @@ data class ChoferRequestDto(
 )
 
 data class ChoferStatsDto(
-    val total: Int,
-    @SerializedName("active_staff") val activeStaff: Int,
-    @SerializedName("inactive_staff") val inactiveStaff: Int,
+    val total: Int?,
+    @SerializedName("active_staff") val activeStaff: Int?,
+    @SerializedName("inactive_staff") val inactiveStaff: Int?,
 )
 
 fun ChoferDto.toDomain() = Chofer(

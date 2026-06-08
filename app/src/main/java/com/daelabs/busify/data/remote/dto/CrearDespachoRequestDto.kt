@@ -24,7 +24,7 @@ data class CrearDespachoRequestDto(
 )
 
 private fun obtenerHoraActualIso(horasDeAñadido: Int): String {
-    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
     sdf.timeZone = TimeZone.getTimeZone("UTC")
     val tiempoCalculado = System.currentTimeMillis() + (horasDeAñadido * 3600000L)
     return sdf.format(Date(tiempoCalculado))

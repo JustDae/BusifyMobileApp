@@ -11,9 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 import com.daelabs.busify.presentation.viewmodel.DespachoViewModel
 import com.daelabs.busify.presentation.viewmodel.DespachoFlujoState
 
@@ -76,8 +78,32 @@ fun DespachoBottomSheet(
                     items(cola, key = { it.ruta.id }) { item ->
                         Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(item.ruta.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                                Text("${item.unidadesSolicitadas} unidades asignadas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                Text(item.ruta.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (item.unidadesSolicitadas > 0) {
+                                        Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
+                                            Text(
+                                                text = "${item.unidadesSolicitadas} unidades a despachar",
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                    if (item.unidadesSolicitadas > 0 && item.pasajesComprados > 0) {
+                                        Text(" + ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 4.dp))
+                                    }
+                                    if (item.pasajesComprados > 0) {
+                                        Surface(color = Color(0xFFE8F5E9), shape = RoundedCornerShape(4.dp)) {
+                                            Text(
+                                                text = "${item.pasajesComprados} pasajes adquiridos",
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color(0xFF2E7D32)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                             IconButton(onClick = { viewModel.removerDeLaCola(item.ruta.id) }) {
                                 Icon(Icons.Default.Close, contentDescription = "Remover", tint = MaterialTheme.colorScheme.error)
@@ -90,7 +116,25 @@ fun DespachoBottomSheet(
 
                 Row(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Subtotal Operativo", style = MaterialTheme.typography.bodyMedium)
-                    Text("$${"%.2f".format(costoTotal)}", fontWeight = FontWeight.Bold)
+                    Text("$${String.format(Locale.US, "%.2f", costoTotal)}", fontWeight = FontWeight.Bold)
+                }
+
+                if (flujoState is DespachoFlujoState.Error) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = (flujoState as DespachoFlujoState.Error).error,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
 
                 val estaCargando = flujoState is DespachoFlujoState.Procesando

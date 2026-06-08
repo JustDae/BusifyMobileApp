@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Locale
 import com.daelabs.busify.domain.model.Viaje
 import com.daelabs.busify.domain.model.ViajeStatus
 import com.daelabs.busify.presentation.components.LoadingScreen
@@ -24,8 +25,8 @@ import com.daelabs.busify.presentation.viewmodel.MonitoreoViewModel
 
 private val PASOS_RUTA = listOf(
     ViajeStatus.PENDING,
-    ViajeStatus.EN_PROGRESO,
-    ViajeStatus.COMPLETADO
+    ViajeStatus.ON_ROUTE,
+    ViajeStatus.COMPLETED
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,12 +40,12 @@ fun OrderDetailScreen(
     LaunchedEffect(viajeId) { viewModel.loadViajeDetail(viajeId) }
 
     when (val s = state) {
-        is ViajeDetailUiState.Loading -> LoadingScreen("Conectando con GPS del bus...")
+        is ViajeDetailUiState.Loading -> LoadingScreen("Cargando información de tu viaje...")
         is ViajeDetailUiState.Error -> {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Despacho #${viajeId}") },
+                        title = { Text("Boleto #${viajeId}") },
                         navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } }
                     )
                 }
@@ -62,7 +63,7 @@ private fun ViajeDetailContent(viaje: Viaje, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Monitoreo Unidad: ${viaje.busPlaca}") },
+                title = { Text("Información del Viaje") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
                 actions = { StatusBadge(viaje.status, modifier = Modifier.padding(end = 16.dp)) }
             )
@@ -80,10 +81,12 @@ private fun ViajeDetailContent(viaje: Viaje, onBack: () -> Unit) {
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Consolidado Operativo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Detalles de tu Boleto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text("Pasajeros Totales: ${viaje.numPasajerosTotal}")
-                    Text("Caja Integrada Recaudada: $${"%.2f".format(viaje.tarifaTotalRecaudada)}")
+                    Text("Ruta: ${viaje.rutaNombre}")
+                    Text("Unidad: ${viaje.busPlaca}")
+                    Text("Pasajeros: ${viaje.numPasajerosTotal}")
+                    Text("Total Pagado: $${String.format(Locale.US, "%.2f", viaje.tarifaTotalRecaudada)}")
                 }
             }
         }
@@ -94,7 +97,7 @@ private fun ViajeDetailContent(viaje: Viaje, onBack: () -> Unit) {
 private fun ProgresoViajeBar(steps: List<ViajeStatus>, currentStep: Int) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Línea de Tiempo del Servicio", style = MaterialTheme.typography.labelSmall)
+            Text("Estado del Viaje", style = MaterialTheme.typography.labelSmall)
             Spacer(Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 steps.forEachIndexed { index, step ->

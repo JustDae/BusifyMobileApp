@@ -4,9 +4,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.daelabs.busify.domain.model.Cooperativa
 import com.daelabs.busify.domain.model.Ruta
 import com.daelabs.busify.domain.model.RutaFilters
 import com.daelabs.busify.domain.model.RutaPayload
+import com.daelabs.busify.domain.repository.CooperativaRepository
 import com.daelabs.busify.domain.repository.RutaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -16,6 +18,7 @@ import javax.inject.Inject
 
 data class AdminRutasState(
     val rutas: List<Ruta> = emptyList(),
+    val cooperativas: List<Cooperativa> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val filters: RutaFilters = RutaFilters(),
@@ -26,7 +29,8 @@ data class AdminRutasState(
 
 @HiltViewModel
 class AdminRutasViewModel @Inject constructor(
-    private val repository: RutaRepository
+    private val repository: RutaRepository,
+    private val cooperativaRepository: CooperativaRepository
 ) : ViewModel() {
 
     private val _state = mutableStateOf(AdminRutasState())
@@ -36,6 +40,19 @@ class AdminRutasViewModel @Inject constructor(
 
     init {
         getRutas()
+        getCooperativas()
+    }
+
+    fun getCooperativas() {
+        viewModelScope.launch {
+            cooperativaRepository.getCooperativas()
+                .onSuccess { cooperativas ->
+                    _state.value = _state.value.copy(cooperativas = cooperativas)
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(error = error.message ?: "Error al cargar cooperativas")
+                }
+        }
     }
 
     fun getRutas() {
@@ -81,10 +98,10 @@ class AdminRutasViewModel @Inject constructor(
         }
     }
 
-    fun saveRuta(id: Int?, name: String, tarifa: Double, cooperativaId: Int?) {
+    fun saveRuta(id: Int?, name: String, description: String, origin: String, destination: String, tarifa: Double, isActive: Boolean, cooperativaId: Int?) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null, saveSuccess = false)
-            val payload = RutaPayload(name, tarifa, cooperativaId)
+            val payload = RutaPayload(name, description, origin, destination, tarifa, isActive, cooperativaId)
             val result = if (id == null) {
                 repository.createRuta(payload)
             } else {

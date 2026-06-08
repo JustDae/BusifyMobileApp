@@ -12,6 +12,7 @@ import javax.inject.Inject
 data class DespachoItem(
     val ruta: Ruta,
     val unidadesSolicitadas: Int,
+    val pasajesComprados: Int = 0
 )
 
 sealed interface DespachoFlujoState {
@@ -34,19 +35,26 @@ class DespachoViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val costoOperacionEstimado = _colaDespacho
-        .map { it.sumOf { i -> i.ruta.tarifa * i.unidadesSolicitadas } }
+        .map { it.sumOf { i -> i.ruta.tarifa * (i.unidadesSolicitadas + i.pasajesComprados) } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     private val _flujoState = MutableStateFlow<DespachoFlujoState>(DespachoFlujoState.Idle)
     val flujoState: StateFlow<DespachoFlujoState> = _flujoState.asStateFlow()
 
-    fun addRutaALaCola(ruta: Ruta, unidades: Int) {
+    fun addRutaALaCola(ruta: Ruta, unidades: Int, pasajes: Int = 0) {
         _colaDespacho.update { current ->
             val existing = current.find { it.ruta.id == ruta.id }
             if (existing != null) {
-                current.map { if (it.ruta.id == ruta.id) it.copy(unidadesSolicitadas = unidades) else it }
+                current.map { 
+                    if (it.ruta.id == ruta.id) 
+                        it.copy(
+                            unidadesSolicitadas = unidades, 
+                            pasajesComprados = it.pasajesComprados + pasajes 
+                        ) 
+                    else it 
+                }
             } else {
-                current + DespachoItem(ruta, unidades)
+                current + DespachoItem(ruta, unidades, pasajes)
             }
         }
     }
@@ -65,36 +73,32 @@ class DespachoViewModel @Inject constructor(
         viewModelScope.launch {
             _flujoState.value = DespachoFlujoState.Procesando
 
-            val itemActual = currentItems.firstOrNull()
-            if (itemActual == null) {
-                _flujoState.value = DespachoFlujoState.Error("No hay líneas en espera en la consola")
-                return@launch
+            var lastViajeId = -1
+            var hasError = false
+            var errorMessage = ""
+
+            for (item in currentItems) {
+                for (i in 1..item.unidadesSolicitadas) {
+                    repository.crearDespacho(
+                        rutaId = item.ruta.id,
+                        busesDespachados = 1
+                    ).onSuccess { maestro ->
+                        lastViajeId = maestro.id
+                        kotlinx.coroutines.delay(150)
+                    }.onFailure { error ->
+                        hasError = true
+                        errorMessage = "Error despachando unidad ${i} de ${item.ruta.name}: ${error.message}"
+                    }
+                    if (hasError) break
+                }
+                if (hasError) break
             }
 
-            repository.crearDespacho(
-                rutaId = itemActual.ruta.id,
-                busesDespachados = itemActual.unidadesSolicitadas
-            ).onSuccess { maestro ->
-
-                var asignacionExitosa = true
-                for (item in currentItems) {
-                    repository.asignarUnidad(maestro.id, item.ruta.id, busId = 1, choferId = 1).getOrElse {
-                        asignacionExitosa = false
-                        _flujoState.value = DespachoFlujoState.Error("Fallo en asignación local: ${item.ruta.name}")
-                    }
-                }
-
-                if (!asignacionExitosa) return@launch
-
-                repository.confirmarDespacho(maestro.id).onSuccess { transaccion ->
-                    vaciarCola()
-                    _flujoState.value = DespachoFlujoState.Exito(transaccion.id)
-                }.onFailure {
-                    _flujoState.value = DespachoFlujoState.Error("Error al levantar el servicio")
-                }
-
-            }.onFailure { error ->
-                _flujoState.value = DespachoFlujoState.Error(error.message ?: "Infraestructura backend no responde")
+            if (hasError) {
+                _flujoState.value = DespachoFlujoState.Error(errorMessage)
+            } else {
+                vaciarCola()
+                _flujoState.value = DespachoFlujoState.Exito(lastViajeId)
             }
         }
     }

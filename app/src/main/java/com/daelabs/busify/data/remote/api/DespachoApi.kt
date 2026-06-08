@@ -9,24 +9,25 @@ import retrofit2.http.*
 
 interface DespachoApi {
 
-    @POST("transit/viajes/despacho/")
+    @POST("viajes/despacho/")
     suspend fun crearDespacho(
         @Body request: CrearDespachoRequestDto
     ): Response<ViajeDto>
 
-    @POST("transit/viajes/{id}/asignar_unidad/")
+    @POST("viajes/{id}/asignar-unidad/")
     suspend fun asignarUnidad(
         @Path("id") viajeId: Int,
         @Body request: AsignarUnidadRequestDto
     ): Response<ViajeDto>
 
-    @POST("transit/viajes/{id}/confirmar/")
+    @POST("viajes/{id}/confirmar-despacho/")
     suspend fun confirmarDespacho(
         @Path("id") viajeId: Int
     ): Response<ViajeDto>
 
-    @GET("transit/viajes/")
+    @GET("viajes/")
     suspend fun getViajesActivos(
-        @Query("page") page: Int?
+        @Query("page") page: Int?,
+        @Query("status") status: String?
     ): Response<PaginatedDto<ViajeDto>>
 }

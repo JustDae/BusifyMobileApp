@@ -1,5 +1,6 @@
 package com.daelabs.busify.presentation.ui.admin.choferes
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,19 +58,51 @@ fun AdminChoferListScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = state.search,
-            onValueChange = { viewModel.onSearchQueryChange(it) },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Buscar chofer por nombre...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
-            shape = MaterialTheme.shapes.medium,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Accent,
-                unfocusedBorderColor = Border
-            ),
-            singleLine = true
-        )
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = state.search,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Buscar chofer por nombre...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Accent,
+                    unfocusedBorderColor = Border
+                ),
+                singleLine = true
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            val rotation = rememberInfiniteTransition(label = "refresh")
+                .animateFloat(
+                    initialValue = 0f,
+                    targetValue = if (state.isLoading) 360f else 0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "rotation"
+                )
+
+            IconButton(
+                onClick = viewModel::getChoferes,
+                enabled = !state.isLoading
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Actualizar",
+                    tint = if (state.isLoading) Accent else TextSecondary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .let { if (state.isLoading) it.rotate(rotation.value) else it }
+                )
+            }
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -122,7 +156,6 @@ fun AdminChoferListScreen(
 
     if (state.error != null) {
         LaunchedEffect(state.error) {
-            // Se podría usar un Snackbar aquí
         }
     }
 }

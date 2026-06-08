@@ -21,6 +21,7 @@ fun KpiCard(
     icon: ImageVector,
     color: Color = Accent,
     hasAlert: Boolean = false,
+    isError: Boolean = false,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -66,31 +67,31 @@ fun KpiCard(
                 ) {
                     Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
                 }
-                if (hasAlert) {
-                    Text("⚠️", fontSize = 18.sp)
+                if (hasAlert || isError) {
+                    Text(if (isError) "❗️" else "⚠️", fontSize = 18.sp)
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = value,
+                text = if (isError) "—" else value,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = TextPrimary,
+                color = if (isError) Error else TextPrimary,
                 lineHeight = 30.sp,
             )
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
+                color = if (isError) Error else TextSecondary,
                 fontWeight = FontWeight.Medium,
             )
-            if (subtitle != null) {
+            if (subtitle != null || isError) {
                 Text(
-                    text = subtitle,
+                    text = if (isError) "Error de conexión" else subtitle ?: "",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = if (hasAlert) Error else TextFaint,
+                    color = if (hasAlert || isError) Error else TextFaint,
                 )
             }
         }

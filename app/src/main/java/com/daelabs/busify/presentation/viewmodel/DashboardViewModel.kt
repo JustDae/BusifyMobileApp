@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daelabs.busify.domain.model.Bus
 import com.daelabs.busify.domain.model.BusFilters
+import com.daelabs.busify.domain.model.RutaFilters
 import com.daelabs.busify.domain.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -26,6 +27,7 @@ data class DashboardStats(
     val totalChoferes: Int = 0,
     val availableChoferes: Int = 0,
     val alertBuses: List<Bus> = emptyList(),
+    val sectionErrors: Map<String, String> = emptyMap()
 )
 
 sealed interface DashboardUiState {
@@ -46,6 +48,9 @@ class DashboardViewModel @Inject constructor(
     private val _state = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private val _lastUpdated = MutableStateFlow<Long>(0L)
     val lastUpdated: StateFlow<Long> = _lastUpdated.asStateFlow()
 
@@ -55,53 +60,130 @@ class DashboardViewModel @Inject constructor(
 
     fun load() {
         viewModelScope.launch {
-            _state.value = DashboardUiState.Loading
+            if (_state.value !is DashboardUiState.Success) {
+                _state.value = DashboardUiState.Loading
+            }
+            _isRefreshing.value = true
+
+            val errors = mutableMapOf<String, String>()
 
             try {
-                val busStatsDeferred = async { busRepository.getStats() }
-                val rutaStatsDeferred = async { rutaRepository.getStats() }
-                val viajeStatsDeferred = async { viajeRepository.getStats() }
-                val userStatsDeferred = async { userRepository.getStats() }
-                val choferStatsDeferred = async { choferRepository.getStats() }
-                val alertBusesDeferred = async {
-                    busRepository.getBuses(
-                        BusFilters(estaActivo = false, page = 1, pageSize = 5)
+                val busStatsDef = async { busRepository.getStats() }
+                val rutaStatsDef = async { rutaRepository.getStats() }
+                val viajeStatsDef = async { viajeRepository.getStats() }
+                val userStatsDef = async { userRepository.getStats() }
+                val choferStatsDef = async { choferRepository.getStats() }
+                val alertDef = async { busRepository.getBuses(BusFilters(estaActivo = false, page = 1, pageSize = 5)) }
+
+                val busRes = busStatsDef.await()
+                val rutaRes = rutaStatsDef.await()
+                val viajeRes = viajeStatsDef.await()
+                val userRes = userStatsDef.await()
+                val choferRes = choferStatsDef.await()
+                val alertRes = alertDef.await()
+
+                var busData = busRes.getOrNull() ?: emptyMap()
+                if (busRes.isFailure) {
+                    busRepository.getBuses(BusFilters(page = 1, pageSize = 100)).fold(
+                        onSuccess = { (buses, _) ->
+                            busData = mapOf(
+                                "total_active" to buses.count { it.estaActivo },
+                                "total_inactive" to buses.count { !it.estaActivo },
+                                "avg_speed" to if (buses.isNotEmpty()) buses.map { it.velocidadKmh }.average() else 0.0
+                            )
+                        },
+                        onFailure = { errors["buses"] = it.message ?: "Error de conexión" }
                     )
                 }
 
-                val busStats = busStatsDeferred.await().getOrDefault(emptyMap())
-                val rutaStats = rutaStatsDeferred.await().getOrDefault(emptyMap())
-                val viajeStats = viajeStatsDeferred.await().getOrDefault(emptyMap())
-                val userStats = userStatsDeferred.await().getOrDefault(emptyMap())
-                val choferStats = choferStatsDeferred.await().getOrDefault(emptyMap())
-                val alertBuses = alertBusesDeferred.await().getOrNull()
+                var choferData = choferRes.getOrNull() ?: emptyMap()
+                if (choferRes.isFailure) {
+                    choferRepository.getChoferes().fold(
+                        onSuccess = { choferes ->
+                            choferData = mapOf(
+                                "total" to choferes.size,
+                                "available" to choferes.count { it.isActive }
+                            )
+                        },
+                        onFailure = { errors["choferes"] = it.message ?: "Error de conexión" }
+                    )
+                }
+
+                var rutaData = rutaRes.getOrNull() ?: emptyMap()
+                if (rutaRes.isFailure) {
+                    rutaRepository.getRutas(RutaFilters(page = 1, pageSize = 100)).fold(
+                        onSuccess = { (rutas, _) ->
+                            rutaData = mapOf(
+                                "total_active" to rutas.count { it.isActive },
+                                "total_inactive" to rutas.count { !it.isActive }
+                            )
+                        },
+                        onFailure = { errors["rutas"] = it.message ?: "Error de conexión" }
+                    )
+                }
+
+                var viajeData = viajeRes.getOrNull() ?: emptyMap()
+                if (viajeRes.isFailure) {
+                    viajeRepository.getViajes(page = 1).fold(
+                        onSuccess = { (viajes, total) ->
+                            viajeData = mapOf(
+                                "total_viajes" to total,
+                                "by_status" to viajes.groupBy { it.status.value }.mapValues { it.value.size }
+                            )
+                        },
+                        onFailure = { errors["viajes"] = it.message ?: "Error de conexión" }
+                    )
+                }
+
+                var userData = userRes.getOrNull()?.mapValues { it.value.toAny() } ?: emptyMap()
+                if (userRes.isFailure) {
+                    userRepository.getUsers(page = 1).fold(
+                        onSuccess = { (users, total) ->
+                            userData = mapOf(
+                                "total" to total,
+                                "active" to users.count { it.isActive },
+                                "staff" to users.count { it.isStaff }
+                            )
+                        },
+                        onFailure = { errors["usuarios"] = it.message ?: "Error de conexión" }
+                    )
+                }
+
+                val alertBuses = alertRes.getOrNull()?.first ?: emptyList()
 
                 @Suppress("UNCHECKED_CAST")
-                val viajesByStatus = (viajeStats["by_status"] as? Map<String, Int>) ?: emptyMap()
+                val vStatus = (viajeData["by_status"] as? Map<String, Int>) ?: emptyMap()
 
                 val stats = DashboardStats(
-                    totalActiveBuses = (busStats["total_active"] as? Int) ?: 0,
-                    inactiveBuses = (busStats["total_inactive"] as? Int) ?: 0,
-                    totalBuses = ((busStats["total_active"] as? Int) ?: 0) + ((busStats["total_inactive"] as? Int) ?: 0),
-                    avgSpeed = (busStats["avg_speed"] as? Double) ?: 0.0,
-                    activeRutas = (rutaStats["total_active"] as? Int) ?: 0,
-                    totalRutas = ((rutaStats["total_active"] as? Int) ?: 0) + ((rutaStats["total_inactive"] as? Int) ?: 0),
-                    totalViajes = (viajeStats["total_viajes"] as? Int) ?: 0,
-                    viajesByStatus = viajesByStatus,
-                    activeUsers = (userStats["active"] as? Int) ?: 0,
-                    totalUsers = (userStats["total"] as? Int) ?: 0,
-                    staffUsers = (userStats["staff"] as? Int) ?: 0,
-                    totalChoferes = (choferStats["total"] as? Int) ?: 0,
-                    availableChoferes = (choferStats["available"] as? Int) ?: 0,
-                    alertBuses = alertBuses?.first ?: emptyList()
+                    totalActiveBuses = (busData["total_active"] as? Int) ?: 0,
+                    inactiveBuses = (busData["total_inactive"] as? Int) ?: 0,
+                    totalBuses = ((busData["total_active"] as? Int) ?: 0) + ((busData["total_inactive"] as? Int) ?: 0),
+                    avgSpeed = (busData["avg_speed"] as? Double) ?: 0.0,
+                    activeRutas = (rutaData["total_active"] as? Int) ?: 0,
+                    totalRutas = ((rutaData["total_active"] as? Int) ?: 0) + ((rutaData["total_inactive"] as? Int) ?: 0),
+                    totalViajes = (viajeData["total_viajes"] as? Int) ?: 0,
+                    viajesByStatus = vStatus,
+                    activeUsers = (userData["active"] as? Int) ?: 0,
+                    totalUsers = (userData["total"] as? Int) ?: 0,
+                    staffUsers = (userData["staff"] as? Int) ?: 0,
+                    totalChoferes = (choferData["total"] as? Int) ?: 0,
+                    availableChoferes = (choferData["available"] as? Int) ?: 0,
+                    alertBuses = alertBuses,
+                    sectionErrors = errors
                 )
 
                 _state.value = DashboardUiState.Success(stats)
                 _lastUpdated.value = System.currentTimeMillis()
 
             } catch (e: Exception) {
-                _state.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
+                if (_state.value !is DashboardUiState.Success) {
+                    _state.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
+                }
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }
 }
+
+private fun Int.toAny(): Any = this

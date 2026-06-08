@@ -48,9 +48,9 @@ class ChoferRepositoryImpl @Inject constructor(
         if (response.isSuccessful) {
             val s = response.body()!!
             mapOf(
-                "total" to s.total,
-                "available" to s.activeStaff,
-                "busy" to s.inactiveStaff
+                "total" to (s.total ?: 0),
+                "available" to (s.activeStaff ?: 0),
+                "busy" to (s.inactiveStaff ?: 0)
             )
         } else error("Error ${response.code()}")
     }

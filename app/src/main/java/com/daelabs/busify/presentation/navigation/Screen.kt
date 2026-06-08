@@ -9,7 +9,6 @@ sealed class Screen(val route: String) {
     object Orders : Screen("orders")
     object Profile : Screen("profile")
     
-    // Admin Routes
     object AdminDashboard : Screen("admin/dashboard")
     
     object AdminRutas : Screen("admin/rutas")
@@ -28,6 +27,9 @@ sealed class Screen(val route: String) {
     }
     
     object AdminViajes : Screen("admin/viajes")
+    object AdminViajeEdit : Screen("admin/viajes/edit/{id}") {
+        fun createRoute(id: Int?) = if (id == null) "admin/viajes/edit/-1" else "admin/viajes/edit/$id"
+    }
 
     object AdminUsuarios : Screen("admin/usuarios")
     object AdminUsuarioEdit : Screen("admin/usuarios/edit/{id}") {

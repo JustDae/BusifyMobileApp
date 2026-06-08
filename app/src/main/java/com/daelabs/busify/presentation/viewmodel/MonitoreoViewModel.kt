@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.daelabs.busify.domain.model.Ruta
 import com.daelabs.busify.domain.model.Viaje
 import com.daelabs.busify.domain.repository.DespachoRepository
+import com.daelabs.busify.domain.repository.ViajeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -24,6 +25,7 @@ data class MonitoreoItem(
 @HiltViewModel
 class MonitoreoViewModel @Inject constructor(
     private val repository: DespachoRepository,
+    private val viajeRepository: ViajeRepository
 ) : ViewModel() {
 
     private val _items = MutableStateFlow<List<MonitoreoItem>>(emptyList())
@@ -43,14 +45,9 @@ class MonitoreoViewModel @Inject constructor(
     fun loadViajeDetail(id: Int) {
         viewModelScope.launch {
             _detailState.value = ViajeDetailUiState.Loading
-            repository.getViajesActivos()
-                .onSuccess { (viajes, _) ->
-                    val viajeEncontrado = viajes.find { it.id == id }
-                    if (viajeEncontrado != null) {
-                        _detailState.value = ViajeDetailUiState.Success(viajeEncontrado)
-                    } else {
-                        _detailState.value = ViajeDetailUiState.Error("Unidad fuera de cobertura satelital")
-                    }
+            viajeRepository.getViaje(id)
+                .onSuccess { viaje ->
+                    _detailState.value = ViajeDetailUiState.Success(viaje)
                 }
                 .onFailure { error ->
                     _detailState.value = ViajeDetailUiState.Error(error.message ?: "Fallo de conexión remota")

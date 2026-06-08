@@ -5,6 +5,7 @@ import com.daelabs.busify.data.local.TokenDataStore
 import com.daelabs.busify.data.remote.api.*
 import com.daelabs.busify.data.remote.interceptor.AuthAuthenticator
 import com.daelabs.busify.data.remote.interceptor.BearerTokenInterceptor
+import com.daelabs.busify.data.remote.interceptor.ErrorInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +38,7 @@ object NetworkModule {
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(BearerTokenInterceptor(tokenDataStore))
+            .addInterceptor(ErrorInterceptor())
             .addInterceptor(logging)
             .authenticator(authAuthenticator)
             .connectTimeout(30, TimeUnit.SECONDS)

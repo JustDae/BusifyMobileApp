@@ -1,5 +1,6 @@
 package com.daelabs.busify.presentation.ui.uipublic.home
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,16 +8,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocalActivity
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -25,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Locale
 import coil.compose.AsyncImage
 import com.daelabs.busify.domain.model.Ruta
 import com.daelabs.busify.presentation.viewmodel.CatalogViewModel
@@ -36,74 +41,103 @@ fun HomeScreen(
     viewModel: CatalogViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val primaryGreen = Color(0xFF2EBD6B)
+    val lightGreen = Color(0xFFE8F5E9)
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(Color(0xFFFBFDFA)),
         contentPadding = PaddingValues(bottom = 32.dp),
     ) {
         item {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                                MaterialTheme.colorScheme.background
-                            ),
-                        ),
-                    )
                     .padding(horizontal = 24.dp, vertical = 56.dp),
             ) {
+                val rotation = rememberInfiniteTransition(label = "refresh")
+                    .animateFloat(
+                        initialValue = 0f,
+                        targetValue = if (state.isLoading) 360f else 0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "rotation"
+                    )
+
+                IconButton(
+                    onClick = viewModel::refresh,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    enabled = !state.isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Actualizar",
+                        tint = Color.Gray.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .size(26.dp)
+                            .let { if (state.isLoading) it.rotate(rotation.value) else it }
+                    )
+                }
+
                 Column {
                     Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        shape = CircleShape,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        color = lightGreen,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.padding(bottom = 20.dp)
                     ) {
                         Text(
-                            text = "TRÁNSITO EN VIVO",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            text = "VIAJA SEGURO",
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.ExtraBold,
+                            color = primaryGreen
                         )
                     }
+
                     Text(
-                        text = "Monitoreo Urbano",
+                        text = "Tu Destino",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                        color = Color(0xFF424242),
                         lineHeight = 36.sp
                     )
                     Text(
-                        text = "Busify Sistema",
-                        fontSize = 42.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = (-1).sp
+                        text = "Busify",
+                        fontSize = 46.sp,
+                        fontWeight = FontWeight.Black,
+                        color = primaryGreen,
+                        letterSpacing = (-1.5).sp,
+                        lineHeight = 48.sp
                     )
-                    Spacer(Modifier.height(16.dp))
+                    
+                    Spacer(Modifier.height(20.dp))
+                    
                     Text(
-                        text = "Gestiona el control global de flota, horarios y unidades activas en tiempo real.",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        text = "Encuentra tu ruta ideal, compra tus pasajes y llega a tiempo a tu destino con monitoreo en tiempo real.",
+                        color = Color.Gray,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth(0.8f)
+                        modifier = Modifier.fillMaxWidth(0.85f),
+                        lineHeight = 24.sp
                     )
-                    Spacer(Modifier.height(32.dp))
+                    
+                    Spacer(Modifier.height(36.dp))
+                    
                     Button(
                         onClick = onCatalogClick,
-                        modifier = Modifier.height(56.dp),
+                        modifier = Modifier
+                            .height(60.dp)
+                            .widthIn(min = 200.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = primaryGreen,
+                            contentColor = Color.White,
                         ),
-                        shape = MaterialTheme.shapes.large,
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(18.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                     ) {
-                        Text("Explorar Rutas", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("Buscar Boletos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.width(12.dp))
                         Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
                     }
@@ -125,6 +159,7 @@ fun HomeScreen(
                             name = coop.name,
                             count = coop.totalRutas,
                             onClick = { onCatalogClick() },
+                            primaryGreen = primaryGreen
                         )
                     }
                 }
@@ -139,7 +174,7 @@ fun HomeScreen(
         if (state.isLoading) {
             item {
                 Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 3.dp)
+                    CircularProgressIndicator(color = primaryGreen, strokeWidth = 3.dp)
                 }
             }
         } else {
@@ -154,6 +189,7 @@ fun HomeScreen(
                             ruta = ruta,
                             onClick = { onRutaClick(ruta.id) },
                             modifier = Modifier.weight(1f),
+                            primaryGreen = primaryGreen
                         )
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
@@ -171,47 +207,38 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Box(
-                Modifier
-                    .width(40.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary))
-        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Black,
+            color = Color(0xFF1A1A1A),
+        )
         TextButton(
             onClick = onSeeAll,
             contentPadding = PaddingValues(horizontal = 8.dp)
         ) {
-            Text("Ver todas", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Text("Ver todas", color = Color(0xFF2EBD6B), fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
-private fun CooperativaChip(name: String, count: Int, onClick: () -> Unit) {
+private fun CooperativaChip(name: String, count: Int, onClick: () -> Unit, primaryGreen: Color) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        tonalElevation = 2.dp,
-        modifier = Modifier.width(140.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+        modifier = Modifier.width(160.dp),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.Start,
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = primaryGreen.copy(alpha = 0.1f),
                 shape = CircleShape,
                 modifier = Modifier.size(48.dp)
             ) {
@@ -219,7 +246,7 @@ private fun CooperativaChip(name: String, count: Int, onClick: () -> Unit) {
                     Icon(
                         Icons.Default.Business,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = primaryGreen,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -229,14 +256,14 @@ private fun CooperativaChip(name: String, count: Int, onClick: () -> Unit) {
                 text = name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = Color(0xFF1A1A1A),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "$count líneas",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                color = Color.Gray,
             )
         }
     }
@@ -247,21 +274,22 @@ fun RutaCard(
     ruta: Ruta,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    primaryGreen: Color = Color(0xFF2EBD6B)
 ) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        tonalElevation = 1.dp,
+        shape = RoundedCornerShape(28.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
         modifier = modifier,
+        shadowElevation = 2.dp
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .height(130.dp)
+                    .background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (ruta.mapaSnippetUrl != null) {
@@ -275,25 +303,25 @@ fun RutaCard(
                     Icon(
                         Icons.Default.DirectionsBus,
                         contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        modifier = Modifier.size(44.dp),
+                        tint = Color.LightGray
                     )
                 }
-                
+
                 if (!ruta.hasBusesActivos) {
                     Surface(
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.9f),
-                        shape = CircleShape,
+                        color = Color(0xFFFF5252).copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(8.dp)
+                            .padding(12.dp)
                     ) {
                         Text(
                             text = "INACTIVA",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.onError,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = Color.White,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black
                         )
                     }
                 }
@@ -303,8 +331,8 @@ fun RutaCard(
                 Text(
                     text = ruta.cooperativaName?.uppercase() ?: "LÍNEA COMÚN",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
+                    color = primaryGreen,
+                    fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -313,44 +341,44 @@ fun RutaCard(
                     text = ruta.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color(0xFF1A1A1A),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(8.dp))
-                
+                Spacer(Modifier.height(12.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "$${"%.2f".format(ruta.tarifa)}",
+                        text = "$${String.format(Locale.US, "%.2f", ruta.tarifa)}",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black,
+                        color = primaryGreen,
                     )
-                    
+
                     Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = MaterialTheme.shapes.small
+                        color = Color(0xFFF1F5F2),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(
                                 Icons.Default.LocalActivity,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                modifier = Modifier.size(14.dp),
+                                tint = Color.Gray
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "${ruta.totalBuses}",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                color = Color.Gray
                             )
                         }
                     }

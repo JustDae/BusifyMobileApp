@@ -42,14 +42,12 @@ class HistorialDespachoViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            repository.getViajesActivos(page = page).onSuccess { (viajes, total) ->
+            repository.getViajesActivos(page = page, status = current.statusFilter.ifBlank { null }).onSuccess { (viajes, total) ->
                 _state.update { s ->
-                    val listaFiltrada = if (current.statusFilter.isBlank()) viajes
-                    else viajes.filter { it.status.value == current.statusFilter }
                     s.copy(
-                        viajes = if (reset) listaFiltrada else s.viajes + listaFiltrada,
+                        viajes = if (reset) viajes else s.viajes + viajes,
                         total = total,
-                        hasMore = (if (reset) listaFiltrada else s.viajes + listaFiltrada).size < total,
+                        hasMore = (if (reset) viajes else s.viajes + viajes).size < total,
                         isLoading = false,
                         isLoadingMore = false,
                         page = page + 1,

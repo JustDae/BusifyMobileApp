@@ -27,18 +27,28 @@ fun AdminBusFormScreen(
     val state = viewModel.state.value
     var numeroBus by remember { mutableStateOf("") }
     var placa by remember { mutableStateOf("") }
-    var rutaActual by remember { mutableStateOf("") }
+    var modelo by remember { mutableStateOf("") }
+    var rutaId by remember { mutableStateOf<Int?>(null) }
     var capacidad by remember { mutableStateOf("") }
     var estaActivo by remember { mutableStateOf(true) }
     var choferId by remember { mutableStateOf("") }
+    var choferExpanded by remember { mutableStateOf(false) }
+    var rutaExpanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(busId) {
-        if (busId != null) {
+    val selectedChofer = state.choferes.find { it.id.toString() == choferId }
+    val choferDisplayText = selectedChofer?.fullName ?: "Seleccionar Chofer"
+
+    val selectedRuta = state.rutas.find { it.id == rutaId }
+    val rutaDisplayText = selectedRuta?.name ?: "Seleccionar Ruta"
+
+    LaunchedEffect(busId, state.buses) {
+        if (busId != null && state.buses.isNotEmpty()) {
             val bus = state.buses.find { it.id == busId }
             bus?.let {
-                numeroBus = it.numeroBus.toString()
+                numeroBus = it.numeroBus
                 placa = it.placa
-                rutaActual = it.rutaActual
+                modelo = ""
+                rutaId = it.rutaId
                 capacidad = it.capacidadPasajeros.toString()
                 estaActivo = it.estaActivo
                 choferId = it.choferId?.toString() ?: ""
@@ -90,11 +100,41 @@ fun AdminBusFormScreen(
             )
 
             OutlinedTextField(
-                value = rutaActual,
-                onValueChange = { rutaActual = it },
-                label = { Text("Ruta Actual (Nombre)") },
+                value = modelo,
+                onValueChange = { modelo = it },
+                label = { Text("Modelo (Ej: Mercedes Benz 2023)") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            ExposedDropdownMenuBox(
+                expanded = rutaExpanded,
+                onExpandedChange = { rutaExpanded = !rutaExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = rutaDisplayText,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Asignar Ruta") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rutaExpanded) },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                ExposedDropdownMenu(
+                    expanded = rutaExpanded,
+                    onDismissRequest = { rutaExpanded = false }
+                ) {
+                    state.rutas.forEach { ruta ->
+                        DropdownMenuItem(
+                            text = { Text(ruta.name) },
+                            onClick = {
+                                rutaId = ruta.id
+                                rutaExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = capacidad,
@@ -104,13 +144,35 @@ fun AdminBusFormScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
-            OutlinedTextField(
-                value = choferId,
-                onValueChange = { choferId = it },
-                label = { Text("ID del Chofer") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+            ExposedDropdownMenuBox(
+                expanded = choferExpanded,
+                onExpandedChange = { choferExpanded = !choferExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = choferDisplayText,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Asignar Chofer") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = choferExpanded) },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                ExposedDropdownMenu(
+                    expanded = choferExpanded,
+                    onDismissRequest = { choferExpanded = false }
+                ) {
+                    state.choferes.forEach { chofer ->
+                        DropdownMenuItem(
+                            text = { Text("${chofer.fullName} (${chofer.licenseNumber})") },
+                            onClick = {
+                                choferId = chofer.id.toString()
+                                choferExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -136,13 +198,16 @@ fun AdminBusFormScreen(
                         viewModel.setError("El número de bus es obligatorio")
                     } else if (placa.isBlank()) {
                         viewModel.setError("La placa es obligatoria")
+                    } else if (modelo.isBlank()) {
+                        viewModel.setError("El modelo es obligatorio")
                     } else if (capacidad.toIntOrNull() == null || capacidad.toIntOrNull()!! <= 0) {
                         viewModel.setError("Ingrese una capacidad válida")
                     } else {
                         val payload = BusPayload(
-                            numeroBus = numeroBus.toIntOrNull() ?: 0,
+                            numeroBus = numeroBus,
                             placa = placa,
-                            rutaActual = rutaActual,
+                            modelo = modelo,
+                            rutaId = rutaId,
                             capacidadPasajeros = capacidad.toIntOrNull() ?: 0,
                             estaActivo = estaActivo,
                             choferId = choferId.toIntOrNull() ?: 0
