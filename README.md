@@ -1,4 +1,4 @@
-# Busify - Gestión de Transporte Interprovincial
+# Busify - Gestión de Transporte 
 
 Aplicación móvil para la administración de cooperativas de transporte, flotas de buses, conductores y programación de viajes en tiempo real. Construida con Kotlin, Jetpack Compose y Clean Architecture.
 
